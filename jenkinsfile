@@ -1,1 +1,32 @@
+pipeline {
+    agent any
+
+    environment {
+        GIT_REPO = 'https://github.com/mariemkahli1/DevopsProject.git'
+        WORKSPACE_DIR = '/var/lib/jenkins/workspace/deploy_note_app'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: "${GIT_REPO}"
+            }
+        }
+
+        stage('Copy Files') {
+            steps {
+                script {
+                    // Copier le dépôt Git cloné dans le répertoire de travail de Jenkins
+                    sh "cp -r . ${WORKSPACE_DIR}"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline completed.'
+        }
+    }
+}
 
