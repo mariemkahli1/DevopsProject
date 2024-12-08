@@ -16,8 +16,8 @@ pipeline {
         stage('Copy Files') {
             steps {
                 script {
-                    // Copier le dépôt Git cloné dans le répertoire de travail de Jenkins
-                    sh "cp -r . ${WORKSPACE_DIR}"
+                    // Copie les fichiers du workspace cloné dans le répertoire de destination
+                    sh "cp -r * ${WORKSPACE_DIR}/"
                 }
             }
         }
@@ -29,4 +29,3 @@ pipeline {
         }
     }
 }
-
