@@ -1,3 +1,9 @@
+const apiUrl :string = "http";
+
+const api :AxiosInstance = axios.create({
+baseURL: API_BASE_URL
+});
+
 import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
 
