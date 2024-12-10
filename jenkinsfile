@@ -5,8 +5,8 @@ def DEPLOYER_KEY_URI = ""
 pipeline {
     agent any
     environment {
-        AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
-        AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
+        AWS_ACCESS_KEY_ID = credentials('Jenkins_AWS_Access_key_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('Jenkins_AWS_Secret_access_key')
         ECR_REPO_URL = '682033493357.dkr.ecr.us-east-1.amazonaws.com'
         ECR_REPO_NAME = 'enis-app'
         IMAGE_REPO = "${ECR_REPO_URL}/${ECR_REPO_NAME}"
