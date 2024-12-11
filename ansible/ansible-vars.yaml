@@ -1,33 +1,24 @@
 # ansible-vars.yaml
-
 docker_service_name: "docker"
 cache_time: 3600
 docker_package_name: "docker.io"
+# ansible-vars.yaml for Linux users
 
-# ecr-vars.yaml
-
-ecr_url: "147997131657.dkr.ecr.us-east-1.amazonaws.com"
-ecr_repository: "test"
+# Docker Variables
+docker_network_name: "my_bridge"  # The name of the Docker network to use
+compose_local_path: "/var/lib/jenkins/workspace/devops-cloud-project/ansible/docker-compose.yaml"  # Local path of docker-compose.yml
+compose_remote_path: "/home/ubuntu/docker-compose.yml"  # Remote path on the EC2 instance where the file will be copied
+project_src_path: "/home/ubuntu"  # Directory on the EC2 instance where docker-compose.yml is located
+backend_container_name: "backend-app"  # Container name for the backend app
+# ECR details
+ecr_url: "241533154231.dkr.ecr.us-east-1.amazonaws.com"
+ecr_repository: "enis-application"
 region: "us-east-1"
-frontend_image_tag: "latest"
-backend_image_tag: "-"
 
-# docker variables
-
-docker_network_name: "my_bridge"
-#compose_local_path: "/home/mariem/ansible/ansible-vars.yaml"
-#compose_local_path: "/var/lib/jenkins/workspace/deploy_note_app/ansible/docker-compose.yaml"
-compose_local_path: "/home/mariem/ansible/ansible-vars.yaml"
-compose_remote_path: "/home/ubuntu/docker-compose.yaml"
-project_src_path: "/home/ubuntu"
-backend_container_name: "backend-app"
-
+# Docker Image Tags
+frontend_image_tag: "frontend-1.0"
+backend_image_tag: "backend-1.0"
 # app credentials
-
 superuser_username: "admin"
 superuser_email: "admin@example.com"
-superuser_password: "SuperSecretPassword"
-
-
-
-
+superuser_password: "password"
