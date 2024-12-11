@@ -1,5 +1,11 @@
 terraform {
-  required_providers {
+  backend "s3" {
+    bucket         = "yes-4fc573f3"
+    key            = "terraform/state"
+    region         = "us-east-1"
+    dynamodb_table = "yes"
+  }
+required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 3.0"
