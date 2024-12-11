@@ -1,34 +1,11 @@
 version: '3.8'
-
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: mysql-db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: Imen_Chaari2023
-      MYSQL_DATABASE: enis_tp
-    ports:
-      - "3307:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql  # Use the named volume
-    networks:
-      - my_bridge
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
   backend-app:
-    image: backend:latest  # Use the already built image
+    image: 241533154231.dkr.ecr.us-east-1.amazonaws.com/enis-application:backend-1.0
     container_name: backend-app
     restart: always
     ports:
-      - "8001:8000"
-    depends_on:
-      mysql:
-        condition: service_healthy
+      - "8000:8000"
     networks:
       - my_bridge
     healthcheck:
@@ -38,16 +15,11 @@ services:
       retries: 5
 
   frontend-app:
-    image: frontend-app:latest  # Use the already built image
+    image: 241533154231.dkr.ecr.us-east-1.amazonaws.com/enis-application:frontend-1.0
     container_name: frontend-app
     restart: always
     ports:
       - "81:80"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      backend-app:
-        condition: service_healthy
     networks:
       - my_bridge
     healthcheck:
@@ -59,8 +31,3 @@ services:
 networks:
   my_bridge:
     external: true
-
-volumes:
-  mysql_data:
-    external:
-      name: d211ff04cd14c527f6883cbed641a6ee85c3f54c5638ab7544cd1577c8989074
