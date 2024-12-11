@@ -6,7 +6,7 @@ pipeline {
     agent any
     environment {
         AWS_ACCESS_KEY_ID = credentials('Jenkins_AWS_Access_key_ID')
-        AWS_SECRET_ACCESS_KEY = credentials('Jenkins_AWS_secret_access_key')
+        AWS_SECRET_ACCESS_KEY = credentials('Jenkins_AWS_Secret_access_key')
         ECR_REPO_URL = '241533154231.dkr.ecr.us-east-1.amazonaws.com'
         ECR_REPO_NAME = 'enis-application'
         IMAGE_REPO = "${ECR_REPO_URL}/${ECR_REPO_NAME}"
