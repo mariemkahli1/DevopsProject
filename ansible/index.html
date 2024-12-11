@@ -1,0 +1,31 @@
+---
+- name: Ensure SSH connectivity and setup Nginx
+  hosts: myhosts
+  become: yes
+  tasks:
+    - name: Test SSH connectivity (ping)
+      ping:
+
+    - name: Update apt package cache
+      apt:
+        update_cache: yes
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Start Nginx service
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Create index.html
+      copy:
+        dest: /var/www/html/index.html
+        content: |
+          <html>
+            <head><title>Welcome to Nginx</title></head>
+            <body><h1>Hello from Ansible!</h1></body>
+          </html>
