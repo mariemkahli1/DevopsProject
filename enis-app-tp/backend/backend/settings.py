@@ -32,7 +32,9 @@ SECRET_KEY = "django-insecure-nma=xi6x2p-crjg^ifqqkapyu1qjd0l=+wn)-rijk_o%$!k3w_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*", 'http://frontend-app',]
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWS_CREDENTIALS = True
+ALLOWED_HOSTS = ['*']
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -97,27 +99,18 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'enis_tp',
-#         'USER': 'root',
-#         'PASSWORD': 'Imen_Chaari2023',
-#         'HOST': 'mysql-db',
-#         'PORT': 3306,
-#     }
-# }
-
 DATABASES = {
-'default': {
-'ENGINE': 'django.db.backends.mysql',
-'NAME': 'enis_tp',
-'USER': 'dbuser',
-'PASSWORD': 'DBpassword2024',
-'HOST': DB_HOST,
-'PORT': 3306,
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'enis_tp',
+        'USER': 'dbuser',
+        'PASSWORD': 'rahma123',
+        'HOST': 'DB_HOST',
+        'PORT': 3306,
+    }
 }
-}
+
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -158,9 +151,3 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOWS_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:81',  # Your frontend application
-    'https://example.com',    # Additional trusted domain
-]
