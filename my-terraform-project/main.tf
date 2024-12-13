@@ -94,7 +94,7 @@ resource "aws_key_pair" "deployer_key" {
 
 # Store the SSH private key in S3
 resource "aws_s3_bucket_object" "private_key_object" {
-  bucket               = "custom-terraform-state-bucket-123456-0f4b4cef"  # Reference your existing S3 bucket
+  bucket               = "yes-c7590f07"  # Reference your existing S3 bucket
   key                  = "${var.ssh_key_name}.pem"
   content              = tls_private_key.example_ssh_key.private_key_pem
   acl                  = "private"
