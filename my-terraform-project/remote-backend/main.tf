@@ -1,10 +1,4 @@
 terraform {
-  backend "s3" {
-    bucket         = "yes-c7590f07"
-    key            = "terraform/state"
-    region         = "us-east-1"
-    dynamodb_table = "custom-terraform-state-locks-123456"
-  }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -15,24 +9,33 @@ terraform {
       version = "~> 3.0"
     }
   }
+
+  backend "s3" {
+    bucket         = "yes-c7590f07" # Replace with your S3 bucket name
+    key            = "aws-backend/terraform.tfstate" # Location of the state file in the bucket
+    region         = "us-east-1" # AWS region
+    dynamodb_table = "yes" # Updated DynamoDB table name
+    encrypt        = true # Enables encryption for the state file
+  }
 }
 
+# AWS provider configuration
 provider "aws" {
   region = "us-east-1"
 }
 
+# Generate a random ID for bucket uniqueness
 resource "random_id" "bucket_suffix" {
   byte_length = 4
 }
 
+# S3 bucket for storing Terraform state
 resource "aws_s3_bucket" "terraform_state" {
   bucket        = "${var.s3_bucket_name}-${random_id.bucket_suffix.hex}"
   force_destroy = true
-  tags = {
-    Name = "TerraformStateBucket"
-  }
 }
 
+# Enable versioning for the S3 bucket
 resource "aws_s3_bucket_versioning" "terraform_bucket_versioning" {
   bucket = aws_s3_bucket.terraform_state.id
   versioning_configuration {
@@ -40,6 +43,7 @@ resource "aws_s3_bucket_versioning" "terraform_bucket_versioning" {
   }
 }
 
+# Enable server-side encryption for the S3 bucket
 resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state_crypto_conf" {
   bucket = aws_s3_bucket.terraform_state.bucket
   rule {
@@ -49,8 +53,9 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state_c
   }
 }
 
+# DynamoDB table for state locking
 resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "custom-terraform-state-locks-123456"
+  name         = "custom-terraform-state-locks-123456" # Match the table name with the existing table
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
