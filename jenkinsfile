@@ -1,7 +1,3 @@
-def EC2_PUBLIC_IP = ""
-def RDS_ENDPOINT = ""
-def DEPLOYER_KEY_URI = ""
-
 pipeline {
     agent any
     environment {
@@ -14,7 +10,13 @@ pipeline {
             steps {
                 script {
                     dir('my-terraform-project/remote-backend') {
-                        sh "terraform init"
+                        // Attempt to migrate state
+                        try {
+                            sh "terraform init -migrate-state"
+                        } catch (Exception e) {
+                            // If migration fails, try reconfiguring
+                            sh "terraform init -reconfigure"
+                        }
                         sh "terraform apply --auto-approve"
                     }
                     dir('my-terraform-project') {
