@@ -16,15 +16,6 @@ required_providers {
     }
   }
 
-  backend "s3" {
-    bucket         = "custom-terraform-state-bucket-123456-0f4b4cef" # Replace with your S3 bucket name
-    key            = "aws-backend/terraform.tfstate" # Location of the state file in the bucket
-    region         = "us-east-1" # AWS region
-    dynamodb_table = "custom-terraform-state-locks-123456" # Updated DynamoDB table name
-    encrypt        = true # Enables encryption for the state file
-  }
-}
-
 # AWS provider configuration
 provider "aws" {
   region = "us-east-1"
