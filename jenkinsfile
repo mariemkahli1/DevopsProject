@@ -7,11 +7,6 @@ pipeline {
     environment {
         AWS_ACCESS_KEY_ID = credentials('Jenkins_AWS_Access_key_ID')
         AWS_SECRET_ACCESS_KEY = credentials('Jenkins_AWS_Secret_access_key')
-        ECR_REPO_URL = '147997131657.dkr.ecr.us-east-1.amazonaws.com/eniis-app'
-        ECR_REPO_NAME = 'eniis-app'
-        IMAGE_REPO = "${ECR_REPO_URL}/${ECR_REPO_NAME}"
-        IMAGE_REPO_FRONTEND = "${IMAGE_REPO}:frontend-1.0"
-        IMAGE_REPO_BACKEND = "${IMAGE_REPO}:backend-1.0"
         AWS_REGION = "us-east-1"
     }
     stages {
@@ -48,7 +43,7 @@ pipeline {
             steps {
                 script {
                     dir('enis-app-tp/backend/backend') {
-                        sh "sed -i \"/'HOST':/c\\        'HOST': '${RDS_ENDPOINT}',\" settings.py"
+                        sh "sed -i 's/\\('HOST': \\).*/\\1'${RDS_ENDPOINT}',/' settings.py"
                     }
                 }
             }
@@ -68,71 +63,19 @@ pipeline {
             steps {
                 dir('enis-app-tp/frontend') {
                     script {
-                        docker.build("${IMAGE_REPO_FRONTEND}")
+                        docker.build("enis-app-frontend", ".")
                     }
                 }
             }
         }
 
-        stage('Build Backend Docker Image') {
-            steps {
-                dir('enis-app-tp/backend') {
-                    script {
-                        docker.build("${IMAGE_REPO_BACKEND}")
-                    }
-                }
-            }
-        }
-
-        stage('Push Docker Images to ECR') {
+        stage('Deploy Application') {
             steps {
                 script {
-                    sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REPO_URL}"
-                    sh "docker push ${IMAGE_REPO_FRONTEND}"
-                    sh "docker push ${IMAGE_REPO_BACKEND}"
+                    echo "Deploying application to ${EC2_PUBLIC_IP}"
+                    // Add deployment logic here
                 }
             }
-        }
-
-        stage('Download SSH Key from S3') {
-            steps {
-                script {
-                    dir('ansible') {
-                        sh """
-                        aws s3 cp ${DEPLOYER_KEY_URI} deployer_key.pem
-                        chmod 600 deployer_key.pem
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Update Hosts File') {
-            steps {
-                script {
-                    dir('ansible') {
-                        sh "sed -i '2s|.*|${EC2_PUBLIC_IP}|' hosts"
-                    }
-                }
-            }
-        }
-
-        stage('Run Ansible Playbook') {
-            steps {
-                script {
-                    dir('ansible') {
-                        sh "ansible-playbook -i hosts docker_deploy_playbook.yml"
-                    }
-                }
-            }
-        }
-    }
-    post {
-        success {
-            echo "Deployment successful! Access the app at http://${EC2_PUBLIC_IP}:81"
-        }
-        failure {
-            echo "Deployment failed. Check the logs for details."
         }
     }
 }
