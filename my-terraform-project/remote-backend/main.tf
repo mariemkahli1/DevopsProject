@@ -12,7 +12,7 @@ terraform {
 
   backend "s3" {
     bucket         = "yes-c7590f07" # Replace with your S3 bucket name
-    key            = "aws-backend/terraform.tfstate" # Location of the state file in the bucket
+    key            = "backend/terraform.tfstate" # Location of the state file in the bucket
     region         = "us-east-1" # AWS region
     dynamodb_table = "yes" # Updated DynamoDB table name
     encrypt        = true # Enables encryption for the state file
@@ -55,7 +55,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state_c
 
 # DynamoDB table for state locking
 resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "custom-terraform-state-locks-123456" # Match the table name with the existing table
+  name         = "yes" # Match the table name with the existing table
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
