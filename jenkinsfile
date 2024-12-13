@@ -7,8 +7,8 @@ pipeline {
     environment {
         AWS_ACCESS_KEY_ID = credentials('Jenkins_AWS_Access_key_ID')
         AWS_SECRET_ACCESS_KEY = credentials('Jenkins_AWS_Secret_access_key')
-        ECR_REPO_URL = '241533154231.dkr.ecr.us-east-1.amazonaws.com'
-        ECR_REPO_NAME = 'enis-application'
+        ECR_REPO_URL = '147997131657.dkr.ecr.us-east-1.amazonaws.com/eniis-app'
+        ECR_REPO_NAME = 'eniis-app'
         IMAGE_REPO = "${ECR_REPO_URL}/${ECR_REPO_NAME}"
         IMAGE_REPO_FRONTEND = "${IMAGE_REPO}:frontend-1.0"
         IMAGE_REPO_BACKEND = "${IMAGE_REPO}:backend-1.0"
@@ -20,40 +20,15 @@ pipeline {
                 script {
                     dir('my-terraform-project/remote-backend') {
                         sh "terraform init"
-                        // Apply Terraform configuration
                         sh "terraform apply --auto-approve"
                     }
                     dir('my-terraform-project') {
-                        // Initialize Terraform
                         sh "terraform init"
-                        sh "terraform plan -lock=false"
+                        sh "terraform apply --auto-approve"
 
-                        // Apply Terraform configuration
-                        sh "terraform apply -lock=false --auto-approve"
-
-                        // Get EC2 Public IP
-                        EC2_PUBLIC_IP = sh(
-                            script: 'terraform output instance_details | grep "instance_public_ip" | awk \'{print $3}\' | tr -d \'"\'',
-                            returnStdout: true
-                        ).trim()
-
-                        // Get RDS Endpoint
-                        RDS_ENDPOINT = sh(
-                            script: '''
-                            terraform output rds_endpoint | grep "endpoint" | awk -F'=' '{print $2}' | tr -d '[:space:]"' | sed 's/:3306//'
-                            ''',
-                            returnStdout: true
-                        ).trim()
-
-                        DEPLOYER_KEY_URI = sh(
-                            script: 'terraform output deployer_key_s3_uri | tr -d \'"\'',
-                            returnStdout: true
-                        ).trim()
-
-                        // Debugging: Print captured values
-                        echo "EC2 Public IP: ${EC2_PUBLIC_IP}"
-                        echo "RDS Endpoint: ${RDS_ENDPOINT}"
-                        echo "Deployer Key URI: ${DEPLOYER_KEY_URI}"
+                        EC2_PUBLIC_IP = sh(script: 'terraform output -raw instance_public_ip', returnStdout: true).trim()
+                        RDS_ENDPOINT = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
+                        DEPLOYER_KEY_URI = sh(script: 'terraform output -raw deployer_key_s3_uri', returnStdout: true).trim()
                     }
                 }
             }
@@ -63,13 +38,7 @@ pipeline {
             steps {
                 script {
                     dir('enis-app-tp/frontend/src') {
-                        writeFile file: 'config.js', text: """
-                        export const API_BASE_URL = 'http://${EC2_PUBLIC_IP}:8000';
-                        """
-                        sh '''
-                        echo "Contents of config.js after update:"
-                        cat config.js
-                        '''
+                        writeFile file: 'config.js', text: "export const API_BASE_URL = 'http://${EC2_PUBLIC_IP}:8000';"
                     }
                 }
             }
@@ -79,35 +48,17 @@ pipeline {
             steps {
                 script {
                     dir('enis-app-tp/backend/backend') {
-                        // Verify the existence of settings.py
-                        sh '''
-                        if [ -f "settings.py" ]; then
-                            echo "Found settings.py at $(pwd)"
-                        else
-                            echo "settings.py not found in $(pwd)! Exiting..."
-                            exit 1
-                        fi
-                        '''
-                        // Update the HOST in the DATABASES section
-                        sh """
-                        sed -i "/'HOST':/c\\        'HOST': '${RDS_ENDPOINT}'," settings.py
-                        """
-                        // Verify the DATABASES section after the update
-                        sh '''
-                        echo "DATABASES section of settings.py after update:"
-                        sed -n '/DATABASES = {/,/^}/p' settings.py
-                        '''
+                        sh "sed -i \"/'HOST':/c\\        'HOST': '${RDS_ENDPOINT}',\" settings.py"
                     }
                 }
             }
         }
 
-            stage('Create Database in RDS') {
+        stage('Create Database in RDS') {
             steps {
                 script {
                     sh """
-                    mysql -h ${RDS_ENDPOINT} -P 3306 -u dbuser -prahma123 -e "CREATE DATABASE IF NOT EXISTS enis_tp;"
-                    mysql -h ${RDS_ENDPOINT} -P 3306 -u dbuser -prahma123 -e "SHOW DATABASES;"
+                    mysql -h ${RDS_ENDPOINT} -u dbuser -prahma123 -e "CREATE DATABASE IF NOT EXISTS enis_tp;"
                     """
                 }
             }
@@ -117,9 +68,7 @@ pipeline {
             steps {
                 dir('enis-app-tp/frontend') {
                     script {
-                        echo 'Building Frontend Docker Image...'
-                        def frontendImage = docker.build('frontend-app')
-                        echo "Built Image: ${frontendImage.id}"
+                        docker.build("${IMAGE_REPO_FRONTEND}")
                     }
                 }
             }
@@ -129,40 +78,18 @@ pipeline {
             steps {
                 dir('enis-app-tp/backend') {
                     script {
-                        echo 'Building Backend Docker Image...'
-                        def backendImage = docker.build('backend-app')
-                        echo "Built Image: ${backendImage.id}"
+                        docker.build("${IMAGE_REPO_BACKEND}")
                     }
                 }
             }
         }
 
-        stage('Login to AWS ECR') {
+        stage('Push Docker Images to ECR') {
             steps {
                 script {
-                    sh """
-                    aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REPO_URL}
-                    """
-                }
-            }
-        }
-
-        stage('Tag and Push Frontend Image') {
-            steps {
-                script {
-                    echo 'Tagging and pushing Frontend Image...'
-                    sh "docker tag frontend-app:latest $IMAGE_REPO_FRONTEND"
-                    sh "docker push $IMAGE_REPO_FRONTEND"
-                }
-            }
-        }
-
-        stage('Tag and Push Backend Image') {
-            steps {
-                script {
-                    echo 'Tagging and pushing Backend Image...'
-                    sh "docker tag backend-app:latest $IMAGE_REPO_BACKEND"
-                    sh "docker push $IMAGE_REPO_BACKEND"
+                    sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REPO_URL}"
+                    sh "docker push ${IMAGE_REPO_FRONTEND}"
+                    sh "docker push ${IMAGE_REPO_BACKEND}"
                 }
             }
         }
@@ -172,16 +99,7 @@ pipeline {
                 script {
                     dir('ansible') {
                         sh """
-                        # Check and delete the existing key if it exists
-                        if [ -f "deployer_key.pem" ]; then
-                            echo "Deleting existing deployer_key.pem"
-                            rm deployer_key.pem
-                        fi
-
-                        # Download the SSH key from S3
                         aws s3 cp ${DEPLOYER_KEY_URI} deployer_key.pem
-
-                        # Set the proper permissions for the private key
                         chmod 600 deployer_key.pem
                         """
                     }
@@ -193,30 +111,8 @@ pipeline {
             steps {
                 script {
                     dir('ansible') {
-                        sh """
-                        if [ -f "hosts" ]; then
-                            echo "Found hosts file at \$(pwd)"
-                            sed -i "2s|.*|${EC2_PUBLIC_IP}|" hosts
-                            echo "Updated hosts file:"
-                            cat hosts
-                        else
-                            echo "hosts file not found in \$(pwd)! Exiting..."
-                            exit 1
-                        fi
-                        """
+                        sh "sed -i '2s|.*|${EC2_PUBLIC_IP}|' hosts"
                     }
-                }
-            }
-        }
-
-        // For Linux users
-        stage('Check Ansible Version') {
-            steps {
-                script {
-                    sh """
-                    echo "Printing the current Ansible version:"
-                    ansible --version
-                    """
                 }
             }
         }
@@ -225,30 +121,18 @@ pipeline {
             steps {
                 script {
                     dir('ansible') {
-                        sh """
-                        if [ -f "docker_deploy_playbook.yml" ]; then
-                            echo "Found playbook docker_deploy_playbook.yml"
-                            ansible-playbook -i hosts docker_deploy_playbook.yml
-                        else
-                            echo "Playbook docker_deploy_playbook.yml not found!"
-                            exit 1
-                        fi
-                        """
+                        sh "ansible-playbook -i hosts docker_deploy_playbook.yml"
                     }
                 }
             }
         }
-
     }
     post {
         success {
-            script {
-                def instanceUrl = "http://${EC2_PUBLIC_IP}:81"
-                echo "The instance is successfully deployed. Access it here: ${instanceUrl}"
-            }
+            echo "Deployment successful! Access the app at http://${EC2_PUBLIC_IP}:81"
         }
         failure {
-            echo "The pipeline failed. Please check the logs for details."
+            echo "Deployment failed. Check the logs for details."
         }
     }
 }
