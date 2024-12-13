@@ -1,3 +1,4 @@
+# main.tf
 terraform {
   backend "s3" {
     bucket         = "yes-c7590f07"
@@ -5,7 +6,7 @@ terraform {
     region         = "us-east-1"
     dynamodb_table = "yes"
   }
-required_providers {
+  required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 3.0"
@@ -15,6 +16,7 @@ required_providers {
       version = "~> 3.0"
     }
   }
+}
 
 # AWS provider configuration
 provider "aws" {
