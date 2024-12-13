@@ -14,50 +14,50 @@ pipeline {
         IMAGE_REPO_BACKEND = "${IMAGE_REPO}:backend-1.0"
         AWS_REGION = "us-east-1"
     }
-    stages {
-        stage('Provision Server and Database') {
-            steps {
-                script {
-                    dir('my-terraform-project/remote-backend') {
-                        sh "terraform init"
-                        // Apply Terraform configuration
-                        sh "terraform apply --auto-approve"
-                    }
-                    dir('my-terraform-project') {
-                        // Initialize Terraform
-                        sh "terraform init"
-                        sh "terraform plan -lock=false"
+   stages {
+    stage('Provision Server and Database') {
+        steps {
+            script {
+                dir('my-terraform-project/remote-backend') {
+                    // Initialize the Terraform backend with migration if needed
+                    sh "terraform init -migrate-state"  // Migrate existing state if there are changes
+                }
+                dir('my-terraform-project') {
+                    // Initialize Terraform
+                    sh "terraform init -reconfigure"  // Update backend configuration without state migration
+                    sh "terraform plan -lock=false"
 
-                        // Apply Terraform configuration
-                        sh "terraform apply -lock=false --auto-approve"
+                    // Apply Terraform configuration
+                    sh "terraform apply -lock=false --auto-approve"
 
-                        // Get EC2 Public IP
-                        EC2_PUBLIC_IP = sh(
-                            script: 'terraform output instance_details | grep "instance_public_ip" | awk \'{print $3}\' | tr -d \'"\'',
-                            returnStdout: true
-                        ).trim()
+                    // Get EC2 Public IP
+                    EC2_PUBLIC_IP = sh(
+                        script: 'terraform output instance_details | grep "instance_public_ip" | awk \'{print $3}\' | tr -d \'"\'',
+                        returnStdout: true
+                    ).trim()
 
-                        // Get RDS Endpoint
-                        RDS_ENDPOINT = sh(
-                            script: '''
-                            terraform output rds_endpoint | grep "endpoint" | awk -F'=' '{print $2}' | tr -d '[:space:]"' | sed 's/:3306//'
-                            ''',
-                            returnStdout: true
-                        ).trim()
+                    // Get RDS Endpoint
+                    RDS_ENDPOINT = sh(
+                        script: '''
+                        terraform output rds_endpoint | grep "endpoint" | awk -F'=' '{print $2}' | tr -d '[:space:]"' | sed 's/:3306//'
+                        ''',
+                        returnStdout: true
+                    ).trim()
 
-                        DEPLOYER_KEY_URI = sh(
-                            script: 'terraform output deployer_key_s3_uri | tr -d \'"\'',
-                            returnStdout: true
-                        ).trim()
+                    DEPLOYER_KEY_URI = sh(
+                        script: 'terraform output deployer_key_s3_uri | tr -d \'"\'',
+                        returnStdout: true
+                    ).trim()
 
-                        // Debugging: Print captured values
-                        echo "EC2 Public IP: ${EC2_PUBLIC_IP}"
-                        echo "RDS Endpoint: ${RDS_ENDPOINT}"
-                        echo "Deployer Key URI: ${DEPLOYER_KEY_URI}"
-                    }
+                    // Debugging: Print captured values
+                    echo "EC2 Public IP: ${EC2_PUBLIC_IP}"
+                    echo "RDS Endpoint: ${RDS_ENDPOINT}"
+                    echo "Deployer Key URI: ${DEPLOYER_KEY_URI}"
                 }
             }
         }
+    }
+}
 
         stage('Update Frontend Configuration') {
             steps {
